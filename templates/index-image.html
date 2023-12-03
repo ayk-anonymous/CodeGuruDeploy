@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeGuru | Image Prediction</title>
+    <!-- Include Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Include Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+    <!-- Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/kute.js@2.1.2/dist/kute.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap">
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/favicon-16x16.png">
+    <link rel="manifest" href="static/site.webmanifest">
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins';
+            background-repeat: no-repeat;
+            background: url("static/bg.jpg");
+            background-position: center;
+            background-size: cover;
+            background-attachment: fixed;
+            /* Add this line for responsiveness */
+        }
+
+        body::-webkit-scrollbar {
+            width: 5px;
+            /* Width of the scrollbar */
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background-color: #4e4e4e;
+            /* Color of the scrollbar thumb */
+            border-radius: 10px;
+            /* Rounded corners of the thumb */
+        }
+
+        body::-webkit-scrollbar-track {
+            background-color: #363636
+                /* Color of the scrollbar track */
+        }
+
+        .center-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: auto;
+        }
+
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        /* Custom CodeMirror styles */
+        .CodeMirror {
+            width: calc(60% - 20px);
+            margin-top: 20px;
+            margin-left: 40px;
+            min-height: 400px;
+            max-height: 400px;
+            border: 3px solid #d1d5db;
+            border-radius: 15px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .output-container {
+            width: 35%;
+            /* Adjust the width as needed */
+            box-sizing: border-box;
+            /* Fix for the scrollbar issue */
+        }
+
+        .output-container #output {
+            background-color: #edf2f7;
+            padding: 1rem;
+        }
+
+        .header-banner {
+            font-family: 'Rubik Mono One', sans-serif;
+            -webkit-text-stroke: 1px #1e1e1e;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            height: auto;
+            padding: 20px;
+            /* Adjust padding as needed */
+        }
+
+        #image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            /* Ensure the image fits within the container */
+        }
+
+        body.splash-visible {
+            overflow: hidden;
+        }
+
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #1e1e1e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 998;
+            opacity: 1;
+            animation: pulsate 3.475s infinite alternate;
+        }
+
+        /* Add this class to trigger slide-out animation */
+        .slide-out {
+            animation: slideOut 1.1s ease-in-out forwards;
+        }
+
+        @keyframes slideOut {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulsate {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .splash-logo img {
+            width: 280px;
+            /* Adjust the width as needed */
+            height: auto;
+            /* Maintain aspect ratio */
+        }
+
+        /* Common styles for larger and smaller screens */
+        .text-lg.font-semibold img {
+            max-width: 100%;
+            /* Ensure the image doesn't exceed its container */
+        }
+
+        .popup-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            /* Add a semi-transparent overlay */
+            z-index: 999;
+            /* Ensure a higher z-index */
+        }
+
+        .popup-content {
+            background-color: white;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            /* Ensure a higher z-index */
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 767px) {
+
+            /* Adjust styles for smaller screens */
+            .text-lg.font-semibold img {
+                max-width: 80%;
+                /* Adjust the max-width as needed for smaller screens */
+            }
+
+            .center-container {
+                padding: 0 20px;
+                /* Adjust padding for smaller screens */
+            }
+
+            .model-option-container {
+                max-width: 100%;
+                /* Use full width on smaller screens */
+            }
+
+            .flex-container {
+                flex-direction: column;
+                /* Stack elements vertically on smaller screens */
+            }
+
+            .CodeMirror {
+                width: 100%;
+                /* Use full width on smaller screens */
+                margin-left: 0;
+                /* Remove left margin for full width */
+            }
+
+            .output-container {
+                width: 100%;
+                /* Use full width on smaller screens */
+            }
+
+            #footer {
+                padding: 10px;
+                /* Adjust padding for smaller screens */
+            }
+        }
+
+        @media (min-width: 768px) {
+
+            /* Adjust styles for screens larger than 767px */
+            .center-container {
+                padding: 0 40px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="splash-screen" style="background-image: url('static/bg.jpg');">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <img src="static/SplashScreen.png" alt="Logo">
+            </div>
+        </div>
+    </div>
+    <!-- Navigation Bar -->
+    <header class="absolute top-0 left-0 w-full p-4 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <!-- Logo -->
+            <div class="text-white text-lg font-semibold">
+                <img src="static/CodeGuru.png" alt="CodeGuru" style="width: 200px; height: auto;" class="w-13 h-auto">
+            </div>
+            <nav class="space-x-4">
+                <div class="relative inline-block text-left">
+                    <button id="dropdownButton" type="button"
+                        class="inline-flex justify-center items-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Image Prediction
+                        <!-- Heroicon name: chevron-down -->
+                        <svg class="w-4 h-4 ml-2 -mr-1 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <div id="dropdownMenu"
+                        class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 hidden">
+                        <div class="py-1">
+                            <a href="#"
+                                class="block flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <svg class="w-4 h-4 mr-2 text-gray-500" height="512" viewBox="0 0 100 100" width="512"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <g id="Layer_2" data-name="Layer 2">
+                                        <g id="_7" data-name="7">
+                                            <g id="right">
+                                                <path
+                                                    d="m50 8a42 42 0 1 1 -42 42 42 42 0 0 1 42-42m0-8a50 50 0 1 0 50 50 50 50 0 0 0 -50-50z" />
+                                                <path
+                                                    d="m28.4 48.08a4 4 0 0 0 -2.83 6.83l12 12a4 4 0 1 0 5.66-5.66l-12-12a4 4 0 0 0 -2.83-1.17z" />
+                                                <path
+                                                    d="m70.1 30.4a4 4 0 0 0 -2.83 1.17l-29.7 29.7a4 4 0 0 0 5.66 5.65l29.7-29.7a4 4 0 0 0 -2.83-6.82z" />
+                                            </g>
+                                        </g>
+                                    </g>
+                                </svg>
+                                Image Prediction
+                            </a>
+                            <a href="{{ url_for('text') }}"
+                                class="block flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <!-- Provided SVG icon -->
+                                Text Prediction
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <!-- Centered Container -->
+    <div class="center-container mt-16 relative z-60">
+        <!-- Header Banner -->
+        <div class="header-banner text-4xl font-extrabold text-center text-white mt-16">
+            TIME COMPLEXITY PREDICTOR
+        </div>
+        <!-- Model Option Container -->
+        <div x-data="{ active: 'text' }" class="container mx-auto w-5/4">
+            <div class="max-w-xl mx-auto bg-white rounded-lg shadow-md overflow-hidden items-center mt-16">
+                <div class="px-4 py-6">
+                    <div
+                        class="max-w-xl h-64 p-6 bg-blue-50 border-dashed border-2 border-gray-400 rounded-lg items-center mx-auto text-center cursor-pointer">
+                        <form method="post" action="/predict_image" enctype="multipart/form-data"
+                            onsubmit="return validateForm()">
+                            <!-- Hidden file input -->
+                            <input id="upload" type="file" name="image" class="hidden" accept="image/x-png,image/jpeg"
+                                onchange="displayFileName(this)" />
+
+                            <!-- Styled label for the file input -->
+                            <label for="upload" class="cursor-pointer flex flex-col items-center mt-10">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-gray-700 mx-auto mb-2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                </svg>
+                                <h5 class="mb-2 text-xl font-bold tracking-tight text-gray-700">Upload picture</h5>
+                                <p class="font-normal text-sm text-gray-400">Choose photo size should be less than <b
+                                        class="text-gray-600">2mb</b></p>
+                                <p class="font-normal text-sm text-gray-400">and should be in <b
+                                        class="text-gray-600">JPG or PNG</b> format.</p>
+                                <span id="filename" class="text-gray-500 bg-gray-200 z-50"></span>
+                            </label>
+                    </div>
+                    <div class="w-full">
+                        <label
+                            class="w-full mt-6 text-white bg-[#050708] hover:bg-[#050708]/90 focus:ring-4 focus:outline-none focus:ring-[#050708]/50 font-medium rounded-lg text-sm px-5 py-2.5 flex items-center justify-center mr-2 cursor-pointer">
+                            <button type="submit"
+                                class="px-6 py-3.5 text-base font-medium text-white-900 bg-gradient-to-r from-gray-700 to-gray-900 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-gray-800 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">Predict
+                            </button>
+                        </label>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Popup Button with Question Mark Icon -->
+        <button id="faqButton"
+            class="fixed bottom-6 right-6 bg-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:ring focus:border-blue-300 flex items-center">
+            <span class="mr-2">?</span> FAQ
+        </button>
+
+        <div id="faqPopup" class="popup-overlay px-2 py-5" style="display: none;">
+            <div class="popup-content">
+                <h2 class="text-2xl font-semibold mb-4 mt-4">Frequently Asked Questions</h2>
+                <ul>
+                    <!-- Add your FAQ items here -->
+                    <li class="mb-2">
+                        <span class="font-semibold">Q:</span> What is CodeGuru?
+                        <br>
+                        <span class="font-semibold">A:</span> CodeGuru is a text and image-based time complexity
+                        predictor using CNN and CodeBERT.
+                    </li>
+                    <li class="mb-2">
+                        <span class="font-semibold">Q:</span> How does CodeGuru work?
+                        <br>
+                        <span class="font-semibold">A:</span> CodeGuru uses advanced AI to analyze code and estimate its
+                        running time, helping developers optimize for better performance.
+                    </li>
+                    <li class="mb-2">
+                        <span class="font-semibold">Q:</span> What AI model does CodeGuru use?
+                        <br>
+                        <span class="font-semibold">A:</span> CodeGuru utilizes EfficientNet for image prediction and
+                        CodeBERT for text prediction, providing responses in Big O notation.
+                    </li>
+                    <li class="mb-2">
+                        <span class="font-semibold">Q:</span> What programming languages work with CodeGuru?
+                        <br>
+                        <span class="font-semibold">A:</span> CodeGuru predicts running times for C, C++, C#, Java, and
+                        Python.
+                    </li>
+                </ul>
+                <button id="closeButton"
+                    class="mt-6 bg-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:ring focus:border-blue-300">
+                    Close
+                </button>
+            </div>
+        </div>
+        <footer class="p-4 md:p-8 lg:p-10 dark:bg-white-800">
+            <div class="mx-auto max-w-screen-xl text-center">
+                <a href="#" class="flex justify-center items-center text-2xl font-semibold text-white-900">
+                    <img src="static/CodeGuru.png" alt="CodeGuru" style="width: 100px; height: auto;"
+                        class="w-14 h-auto">
+                </a>
+                <p class="my-6 text-gray-500 dark:text-white-400" style="color: #f2f2f2;">CodeGuru: A Text and
+                    Image-Based Time Complexity Predictor Using CNN and CodeBERT.</p>
+                <span class="text-sm text-gray-500 sm:text-center dark:text-white-400" style="color: #f2f2f2;">Ruidera,
+                    Cadag, Lusterio (2023)</span>
+            </div>
+        </footer>
+        <!-- Initialize CodeMirror -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Schedule the removal of the splash screen
+                setTimeout(function () {
+                    document.querySelector('.splash-screen').classList.add('animate__fadeIn');
+                    setTimeout(function () {
+                        document.querySelector('.splash-screen').style.display = 'none';
+                    }, 1000);
+                }, 3000);
+            });
+            document.addEventListener('DOMContentLoaded', function () {
+                // Show the splash screen
+                document.body.classList.add('splash-visible');
+
+                // Schedule the removal of the splash screen
+                setTimeout(function () {
+                    document.body.classList.remove('splash-visible');
+                    document.querySelector('.splash-screen').classList.add('slide-out');
+                    setTimeout(function () {
+                        document.querySelector('.splash-screen').style.display = 'none';
+                    }, 1000);
+                }, 3000);
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const dropdownButton = document.getElementById('dropdownButton');
+                const dropdownMenu = document.getElementById('dropdownMenu');
+
+                dropdownButton.addEventListener('click', function () {
+                    dropdownMenu.classList.toggle('hidden');
+                });
+
+                document.addEventListener('click', function (event) {
+                    if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                        dropdownMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const faqButton = document.getElementById('faqButton');
+            const faqPopup = document.getElementById('faqPopup');
+            const closeButton = document.getElementById('closeButton');
+
+            faqButton.addEventListener('click', () => {
+                faqPopup.style.display = 'flex';
+            });
+
+            closeButton.addEventListener('click', () => {
+                faqPopup.style.display = 'none';
+            });
+
+            // Close the popup if the user clicks outside of it
+            window.addEventListener('click', (event) => {
+                if (event.target === faqPopup) {
+                    faqPopup.style.display = 'none';
+                }
+            });
+
+            function validateForm() {
+                var fileInput = document.getElementById('upload');
+
+                if (fileInput.files.length === 0) {
+                    // Create alert element
+                    var alertDiv = document.createElement('div');
+                    alertDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative fixed bottom-0 left-0 right-0';
+                    alertDiv.setAttribute('role', 'alert');
+
+                    // Add content to the alert
+                    alertDiv.innerHTML = `
+            <strong class="font-bold">Oops!</strong>
+            <span class="block sm:inline">Please select a file before submitting.</span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <title>Close</title>
+                    <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+                </svg>
+            </span>
+        `;
+
+                    // Append the alert to the document body
+                    document.body.appendChild(alertDiv);
+
+                    // Remove the alert after a certain duration (e.g., 5000 milliseconds)
+                    setTimeout(function () {
+                        alertDiv.remove();
+                    }, 5000);
+
+                    return false;
+                }
+
+                return true;
+            }
+
+            function displayFileName(input) {
+                var filenameSpan = document.getElementById('filename');
+                filenameSpan.textContent = input.files[0].name;
+            }
+        </script>
+</body>
+
+</html>
